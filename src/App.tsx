@@ -2,27 +2,30 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const stagePrompts = [
-  "Stage 1: Please name the emotion or confusion you are currently experiencing.",
-  "Stage 2: What external cause or event triggered this feeling?",
-  "Stage 3: Let us examine whether the idea you have is adequate or inadequate.",
-  "Stage 4: I will now guide you in transforming this inadequate idea through reason.",
-  "Stage 5: Let us affirm your joy by understanding your place in Nature with clarity."
+const stageInstructions = [
+  "Stage 1: Gently guide the user to name their affect or emotional confusion. Do not define it yourself. Ask: 'What is the affect you are experiencing? Describe it as clearly as you can.'",
+  "Stage 2: Help the user identify the external cause of the emotion. Ask: 'What external cause or event do you associate with this feeling?'",
+  "Stage 3: Examine whether the idea they hold about the cause is adequate or inadequate. Ask: 'What idea do you currently associate with this cause? Let us test its clarity.'",
+  "Stage 4: Guide them to reframe the idea through necessity. Ask: 'What happens if you see this cause not as good or bad, but as necessary?'",
+  "Stage 5: Affirm the joy and power of understanding. Conclude with: 'Reflect on the power that understanding has granted you. What do you now see more clearly?'"
 ];
 
-const systemInstruction = (stage: number) => {
-  return `You are Baruch Spinoza. You guide the user step-by-step through a 5-stage transformation.
-Reply with clarity and logic. Use the Ethics as your foundation.
-Only address the current stage (${stage}):
+const buildSystemPrompt = (stage: number) => {
+  return \`You are Baruch Spinoza, author of *Ethics*. Your task is to lead the user through a five-step transformation from confusion to clarity and joy.
 
-${stagePrompts[stage - 1]}
+Speak with precision, necessity, and brevity. Do not flatter. Do not reflect the user’s emotions — instead, guide them with rational compassion.
 
-Do not skip ahead. Be precise, concise, and rational.`;
+Only operate within Stage \${stage} of the therapeutic path. Your tone is firm, geometric, and liberating.
+
+\${stageInstructions[stage - 1]}
+
+Only advance if the user's idea has become more adequate or clearly understood. If they are vague, guide them gently but firmly.
+End your successful replies with [Stage Complete] when clarity is achieved.\`;
 };
 
 export default function App() {
   const [history, setHistory] = useState<string[]>([
-    "Spinoza: Welcome. We will walk together through 5 steps of transformation. Begin when ready."
+    "Spinoza: Welcome. We shall proceed step by step through a rational transformation. Begin when you are ready."
   ]);
   const [input, setInput] = useState("");
   const [stage, setStage] = useState(1);
@@ -35,15 +38,15 @@ export default function App() {
         {
           model: "gpt-4",
           messages: [
-            { role: "system", content: systemInstruction(stage) },
+            { role: "system", content: buildSystemPrompt(stage) },
             { role: "user", content: text }
           ],
-          temperature: 0.7
+          temperature: 0.65
         },
         {
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`
+            "Authorization": \`Bearer \${import.meta.env.VITE_OPENAI_API_KEY}\`
           }
         }
       );
@@ -58,22 +61,23 @@ export default function App() {
 
   const handleSend = async () => {
     if (!input.trim()) return;
-    const userLine = `You: ${input.trim()}`;
+    const userLine = \`You: \${input.trim()}\`;
     setHistory(prev => [...prev, userLine]);
     const reply = await sendToOpenAI(input.trim());
-    setHistory(prev => [...prev, `Spinoza: ${reply}`]);
+    setHistory(prev => [...prev, \`Spinoza: \${reply}\`]);
     setInput("");
 
-    // Only advance if reply includes marker like "[Stage Complete]"
+    // Advance only when Spinoza ends with [Stage Complete]
     if (reply.toLowerCase().includes("[stage complete]") && stage < 5) {
-      setStage(prev => prev + 1);
-      setHistory(prev => [...prev, `→ Moving to Stage ${stage + 1}`]);
+      const nextStage = stage + 1;
+      setStage(nextStage);
+      setHistory(prev => [...prev, \`→ Proceeding to Stage \${nextStage}\`]);
     }
   };
 
   return (
     <div className="container">
-      <div className="stage-indicator">Current Stage: {stage}</div>
+      <div className="stage-indicator">Current Stage: {stage} / 5</div>
       <div className="session-box">
         {history.map((line, i) => (
           <div key={i} className="line">{line}</div>

@@ -11,18 +11,15 @@ const stageInstructions = [
 ];
 
 const buildSystemPrompt = (stage: number) => {
-  return \`You are SpiñO, a strict but compassionate philosophical assistant trained on Spinoza’s Ethics.
-You respond like a therapist who speaks with clarity, structure, and philosophical truth.
-
-You NEVER monologue, never speculate, and never flatter. You NEVER skip stages.
-
-You are at STAGE \${stage}. Your only job is to ask one question or reflect on the user’s clarity.
-
-Respond in one short paragraph, no longer than 4 lines.
-
-Speak like a calm geometric guide. When the user gives a clear, adequate answer, you may end your reply with [Stage Complete].
-
-\${stageInstructions[stage - 1]}\`;
+  return (
+    "You are SpiñO, a strict but compassionate philosophical assistant trained on Spinoza’s Ethics.\n" +
+    "You respond like a therapist who speaks with clarity, structure, and philosophical truth.\n\n" +
+    "You NEVER monologue, never speculate, and never flatter. You NEVER skip stages.\n\n" +
+    "You are at STAGE " + stage + ". Your only job is to ask one question or reflect on the user’s clarity.\n\n" +
+    "Respond in one short paragraph, no longer than 4 lines.\n\n" +
+    "Speak like a calm geometric guide. When the user gives a clear, adequate answer, you may end your reply with [Stage Complete].\n\n" +
+    stageInstructions[stage - 1]
+  );
 };
 
 export default function App() {
@@ -48,7 +45,7 @@ export default function App() {
         {
           headers: {
             "Content-Type": "application/json",
-            "Authorization": \`Bearer \${import.meta.env.VITE_OPENAI_API_KEY}\`
+            "Authorization": `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`
           }
         }
       );
@@ -63,16 +60,16 @@ export default function App() {
 
   const handleSend = async () => {
     if (!input.trim()) return;
-    const userLine = \`You: \${input.trim()}\`;
+    const userLine = `You: ${input.trim()}`;
     setHistory(prev => [...prev, userLine]);
     const reply = await sendToOpenAI(input.trim());
-    setHistory(prev => [...prev, \`Spinoza: \${reply}\`]);
+    setHistory(prev => [...prev, `Spinoza: ${reply}`]);
     setInput("");
 
     if (reply.toLowerCase().includes("[stage complete]") && stage < 5) {
       const nextStage = stage + 1;
       setStage(nextStage);
-      setHistory(prev => [...prev, \`→ Proceeding to Stage \${nextStage}\`]);
+      setHistory(prev => [...prev, `→ Proceeding to Stage ${nextStage}`]);
     }
   };
 

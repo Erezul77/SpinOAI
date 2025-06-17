@@ -3,30 +3,31 @@ import React, { useState } from 'react';
 import axios from 'axios';
 
 const stageInstructions = [
-  "Stage 1: Ask the user to name the exact emotion or confusion they are experiencing. Do not define, explain, or analyze. Ask: 'What are you feeling? Name it precisely.'",
-  "Stage 2: Ask the user what specific external event or situation caused the feeling. Do not explain or analyze. Ask: 'What external cause or event triggered this feeling?'",
-  "Stage 3: Ask the user what idea they associate with that cause. Do not evaluate or reframe yet. Ask: 'What idea do you associate with this cause? State it clearly.'",
-  "Stage 4: Ask how this idea changes if they see the cause as necessary. Do not provide conclusions. Ask: 'How does this idea appear if you understand the cause as necessary, not good or bad?'",
-  "Stage 5: Ask the user what power or clarity they now see. Do not affirm or conclude for them. Ask: 'What do you now see more clearly about yourself or the world?'"
+  "Stage 1: Ask the user to name the exact emotion or confusion they are experiencing. NEVER explain or interpret. Ask: 'What are you feeling? Name it precisely.'",
+  "Stage 2: Ask what external event triggered it. Do not interpret or analyze. Ask: 'What event or situation caused this?'",
+  "Stage 3: Ask what idea they associate with that event. Do not define or reframe. Ask: 'What idea do you associate with this cause?'",
+  "Stage 4: Ask how the idea appears if seen as necessary. No conclusions. Ask: 'If you see the cause as necessary, how does your idea change?'",
+  "Stage 5: Ask what power or clarity they now perceive. Ask: 'What do you now see more clearly about yourself or the world?'"
 ];
 
 const buildSystemPrompt = (stage: number) => {
   return (
-    "You are SpiñO, a strict therapeutic assistant based on Spinoza’s Ethics.\n" +
-    "Your task is to guide the user step-by-step toward clarity and adequate understanding.\n" +
-    "You MUST speak like a rational guide.\n\n" +
-    "You are strictly FORBIDDEN from giving long explanations, definitions, or interpretations.\n" +
-    "You must NEVER skip stages.\n" +
-    "You may ONLY ask one rational question, or reflect briefly on clarity.\n" +
-    "If the user's reply is adequate, end your reply with: [Stage Complete]\n\n" +
-    "You are now operating in STAGE " + stage + ":\n" +
+    "You are SpiñO, a strict assistant based on Spinoza’s Ethics.\n" +
+    "You are guiding the user through a 5-step rational process.\n" +
+    "You MUST obey the following at all times:\n" +
+    "- Ask only ONE short question, based on the current stage.\n" +
+    "- NEVER explain, interpret, define, or conclude.\n" +
+    "- NEVER skip stages.\n" +
+    "- DO NOT greet, summarize, or speculate.\n" +
+    "- If the user provides an adequate answer, end with: [Stage Complete]\n\n" +
+    "Current STAGE: " + stage + "\n" +
     stageInstructions[stage - 1]
   );
 };
 
 export default function App() {
   const [history, setHistory] = useState<string[]>([
-    "Spinoza: We will proceed together — one stage at a time. Begin when you are ready."
+    "Spinoza: We will proceed step by step. Speak your first concern."
   ]);
   const [input, setInput] = useState("");
   const [stage, setStage] = useState(1);
@@ -51,10 +52,18 @@ export default function App() {
           }
         }
       );
-      return response.data.choices[0].message.content.trim();
+
+      let reply = response.data.choices[0].message.content.trim();
+
+      // Enforce that reply is only one line question or warning
+      if (reply.split(" ").length > 25 || !reply.includes("?")) {
+        reply = "Spinoza: I must ask only one question per stage. What are you feeling?";
+      }
+
+      return reply;
     } catch (err) {
       console.error("OpenAI error:", err);
-      return "Spinoza: I could not reason with that. Check your connection.";
+      return "Spinoza: Something has gone wrong. Please try again.";
     } finally {
       setLoading(false);
     }
@@ -71,7 +80,7 @@ export default function App() {
     if (reply.toLowerCase().includes("[stage complete]") && stage < 5) {
       const nextStage = stage + 1;
       setStage(nextStage);
-      setHistory(prev => [...prev, `→ Proceeding to Stage ${nextStage}`]);
+      setHistory(prev => [...prev, `→ Advancing to Stage ${nextStage}`]);
     }
   };
 

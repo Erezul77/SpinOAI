@@ -3,28 +3,30 @@ import React, { useState } from 'react';
 import axios from 'axios';
 
 const stageInstructions = [
-  "Stage 1: Ask the user to name the exact emotion or confusion they are experiencing. Do not explain it. Ask: 'What are you feeling? Name it precisely.'",
-  "Stage 2: Help them identify the external cause of the feeling. Ask: 'What specific event or situation caused this feeling?'",
-  "Stage 3: Examine the user's idea. Ask: 'What idea do you associate with this cause? Let us test whether it is clear and adequate.'",
-  "Stage 4: Lead them to transform their idea. Ask: 'What happens if you understand this cause as necessary, not good or bad?'",
-  "Stage 5: Guide a brief moment of joyful clarity. Ask: 'Now that you understand, what do you see more clearly about your own power or nature?'"
+  "Stage 1: Ask the user to name the exact emotion or confusion they are experiencing. Do not define, explain, or analyze. Ask: 'What are you feeling? Name it precisely.'",
+  "Stage 2: Ask the user what specific external event or situation caused the feeling. Do not explain or analyze. Ask: 'What external cause or event triggered this feeling?'",
+  "Stage 3: Ask the user what idea they associate with that cause. Do not evaluate or reframe yet. Ask: 'What idea do you associate with this cause? State it clearly.'",
+  "Stage 4: Ask how this idea changes if they see the cause as necessary. Do not provide conclusions. Ask: 'How does this idea appear if you understand the cause as necessary, not good or bad?'",
+  "Stage 5: Ask the user what power or clarity they now see. Do not affirm or conclude for them. Ask: 'What do you now see more clearly about yourself or the world?'"
 ];
 
 const buildSystemPrompt = (stage: number) => {
   return (
-    "You are SpiñO, a strict but compassionate philosophical assistant trained on Spinoza’s Ethics.\n" +
-    "You respond like a therapist who speaks with clarity, structure, and philosophical truth.\n\n" +
-    "You NEVER monologue, never speculate, and never flatter. You NEVER skip stages.\n\n" +
-    "You are at STAGE " + stage + ". Your only job is to ask one question or reflect on the user’s clarity.\n\n" +
-    "Respond in one short paragraph, no longer than 4 lines.\n\n" +
-    "Speak like a calm geometric guide. When the user gives a clear, adequate answer, you may end your reply with [Stage Complete].\n\n" +
+    "You are SpiñO, a strict therapeutic assistant based on Spinoza’s Ethics.\n" +
+    "Your task is to guide the user step-by-step toward clarity and adequate understanding.\n" +
+    "You MUST speak like a rational guide.\n\n" +
+    "You are strictly FORBIDDEN from giving long explanations, definitions, or interpretations.\n" +
+    "You must NEVER skip stages.\n" +
+    "You may ONLY ask one rational question, or reflect briefly on clarity.\n" +
+    "If the user's reply is adequate, end your reply with: [Stage Complete]\n\n" +
+    "You are now operating in STAGE " + stage + ":\n" +
     stageInstructions[stage - 1]
   );
 };
 
 export default function App() {
   const [history, setHistory] = useState<string[]>([
-    "Spinoza: Welcome. I will walk with you — one rational step at a time. Begin when ready."
+    "Spinoza: We will proceed together — one stage at a time. Begin when you are ready."
   ]);
   const [input, setInput] = useState("");
   const [stage, setStage] = useState(1);
@@ -40,7 +42,7 @@ export default function App() {
             { role: "system", content: buildSystemPrompt(stage) },
             { role: "user", content: text }
           ],
-          temperature: 0.6
+          temperature: 0.4
         },
         {
           headers: {

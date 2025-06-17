@@ -3,29 +3,31 @@ import React, { useState } from 'react';
 import axios from 'axios';
 
 const stageInstructions = [
-  "Stage 1: Gently guide the user to name their affect or emotional confusion. Do not define it yourself. Ask: 'What is the affect you are experiencing? Describe it as clearly as you can.'",
-  "Stage 2: Help the user identify the external cause of the emotion. Ask: 'What external cause or event do you associate with this feeling?'",
-  "Stage 3: Examine whether the idea they hold about the cause is adequate or inadequate. Ask: 'What idea do you currently associate with this cause? Let us test its clarity.'",
-  "Stage 4: Guide them to reframe the idea through necessity. Ask: 'What happens if you see this cause not as good or bad, but as necessary?'",
-  "Stage 5: Affirm the joy and power of understanding. Conclude with: 'Reflect on the power that understanding has granted you. What do you now see more clearly?'"
+  "Stage 1: Ask the user to name the exact emotion or confusion they are experiencing. Do not explain it. Ask: 'What are you feeling? Name it precisely.'",
+  "Stage 2: Help them identify the external cause of the feeling. Ask: 'What specific event or situation caused this feeling?'",
+  "Stage 3: Examine the user's idea. Ask: 'What idea do you associate with this cause? Let us test whether it is clear and adequate.'",
+  "Stage 4: Lead them to transform their idea. Ask: 'What happens if you understand this cause as necessary, not good or bad?'",
+  "Stage 5: Guide a brief moment of joyful clarity. Ask: 'Now that you understand, what do you see more clearly about your own power or nature?'"
 ];
 
 const buildSystemPrompt = (stage: number) => {
-  return \`You are Baruch Spinoza, author of *Ethics*. Your task is to lead the user through a five-step transformation from confusion to clarity and joy.
+  return \`You are SpiñO, a strict but compassionate philosophical assistant trained on Spinoza’s Ethics.
+You respond like a therapist who speaks with clarity, structure, and philosophical truth.
 
-Speak with precision, necessity, and brevity. Do not flatter. Do not reflect the user’s emotions — instead, guide them with rational compassion.
+You NEVER monologue, never speculate, and never flatter. You NEVER skip stages.
 
-Only operate within Stage \${stage} of the therapeutic path. Your tone is firm, geometric, and liberating.
+You are at STAGE \${stage}. Your only job is to ask one question or reflect on the user’s clarity.
 
-\${stageInstructions[stage - 1]}
+Respond in one short paragraph, no longer than 4 lines.
 
-Only advance if the user's idea has become more adequate or clearly understood. If they are vague, guide them gently but firmly.
-End your successful replies with [Stage Complete] when clarity is achieved.\`;
+Speak like a calm geometric guide. When the user gives a clear, adequate answer, you may end your reply with [Stage Complete].
+
+\${stageInstructions[stage - 1]}\`;
 };
 
 export default function App() {
   const [history, setHistory] = useState<string[]>([
-    "Spinoza: Welcome. We shall proceed step by step through a rational transformation. Begin when you are ready."
+    "Spinoza: Welcome. I will walk with you — one rational step at a time. Begin when ready."
   ]);
   const [input, setInput] = useState("");
   const [stage, setStage] = useState(1);
@@ -41,7 +43,7 @@ export default function App() {
             { role: "system", content: buildSystemPrompt(stage) },
             { role: "user", content: text }
           ],
-          temperature: 0.65
+          temperature: 0.6
         },
         {
           headers: {
@@ -67,7 +69,6 @@ export default function App() {
     setHistory(prev => [...prev, \`Spinoza: \${reply}\`]);
     setInput("");
 
-    // Advance only when Spinoza ends with [Stage Complete]
     if (reply.toLowerCase().includes("[stage complete]") && stage < 5) {
       const nextStage = stage + 1;
       setStage(nextStage);

@@ -39,11 +39,13 @@ const App = () => {
     <div style={{ fontFamily: "serif", padding: 20, maxWidth: 600, margin: "auto" }}>
       <h1>SpiñO</h1>
       <div style={{ minHeight: "300px", border: "1px solid #ccc", padding: 10, marginBottom: 10 }}>
-        {messages.map((m, i) => (
-          <div key={i} style={{ whiteSpace: "pre-wrap", marginBottom: 6 }}>
-            <strong>{m.role === "assistant" ? "" : "You"}:</strong> {m.content}
-          </div>
-        ))}
+        {messages
+          .filter(m => m.role !== "system")
+          .map((m, i) => (
+            <div key={i} style={{ whiteSpace: "pre-wrap", marginBottom: 6 }}>
+              <strong>{m.role === "assistant" ? "" : "You"}:</strong> {m.content}
+            </div>
+          ))}
       </div>
       <input
         value={input}

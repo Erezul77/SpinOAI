@@ -1,4 +1,3 @@
-// api/ask.ts
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
 
@@ -8,7 +7,7 @@ const openai = new OpenAI({
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    const { message } = JSON.parse(req.body);
+    const { message } = req.body ? JSON.parse(req.body) : { message: '' };
 
     const chat = await openai.chat.completions.create({
       model: 'gpt-4',

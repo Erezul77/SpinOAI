@@ -9,6 +9,7 @@ function App() {
   const sendToOpenAI = async (userInput: string) => {
     const res = await fetch('/api/ask', {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: userInput }),
     });
     const data = await res.json();

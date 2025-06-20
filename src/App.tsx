@@ -1,51 +1,60 @@
-import { useEffect, useRef, useState } from "react";
-import Header from "./components/Header";
-import ChatMessage from "./components/ChatMessage";
-import "./index.css";
+import { useState } from 'react';
+import './index.css';
 
-export default function App() {
-  const [messages, setMessages] = useState<any[]>([]);
-  const [input, setInput] = useState("");
-  const endRef = useRef<HTMLDivElement>(null);
+function App() {
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const sendToOpenAI = async (userInput: string) => {
+    const res = await fetch('/api/ask', {
+      method: 'POST',
+      body: JSON.stringify({ message: userInput }),
+    });
+    const data = await res.json();
+    return data.reply;
+  };
 
   const handleSend = async () => {
     if (!input.trim()) return;
-    const newMessages = [...messages, { role: "user", content: input }];
+    const newMessages = [...messages, { role: 'user', content: input }];
     setMessages(newMessages);
-    setInput("");
+    setInput('');
+    setLoading(true);
 
-    const response = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: newMessages }),
-    });
-    const data = await response.json();
-    setMessages(data.messages);
+    try {
+      const reply = await sendToOpenAI(input);
+      setMessages([...newMessages, { role: 'assistant', content: reply }]);
+    } catch (e) {
+      setMessages([...newMessages, { role: 'assistant', content: '⚠️ Error from OpenAI.' }]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
   return (
-    <div className="app">
-      <Header />
-      <div className="chat-container">
-        {messages.map((msg, index) => (
-          <ChatMessage key={index} message={msg} />
+    <div className="chat-container">
+      <h1>🧠 SpiñO</h1>
+      <div className="chat-box">
+        {messages.map((msg, i) => (
+          <div key={i} className={`chat-message ${msg.role}`}>
+            <strong>{msg.role === 'user' ? 'You' : 'SpiñO'}:</strong> {msg.content}
+          </div>
         ))}
-        <div ref={endRef} />
       </div>
-      <div className="input-bar">
+      <div className="input-box">
         <input
-          type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          placeholder="Type your reflection..."
+          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+          placeholder="Ask something..."
         />
-        <button onClick={handleSend}>→</button>
+        <button onClick={handleSend} disabled={loading}>
+          {loading ? 'Thinking…' : 'Send'}
+        </button>
       </div>
     </div>
   );
 }
+
+export default App;

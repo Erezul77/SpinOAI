@@ -1,19 +1,15 @@
-
 import React from "react";
+import Header from "./components/Header";
 import Chat from "./components/Chat";
-import TopBar from "./components/Header";
-import AboutModal from "./components/AboutModal";
+import "./index.css";
 
-const App: React.FC = () => {
+function App() {
   return (
-    <div className="min-h-screen bg-white text-black">
-      <TopBar />
-      <main className="flex flex-col items-center justify-center p-4">
-        <Chat />
-      </main>
-      <AboutModal />
+    <div className="app-container">
+      <Header />
+      <Chat />
     </div>
   );
-};
+}
 
 export default App;

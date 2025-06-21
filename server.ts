@@ -1,11 +1,12 @@
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
-const { Configuration, OpenAIApi } = require('openai');
+import express, { Request, Response } from 'express';
+import { Configuration, OpenAIApi } from 'openai';
+import dotenv from 'dotenv';
+import cors from 'cors';
 
 dotenv.config();
+
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
@@ -15,23 +16,22 @@ const configuration = new Configuration({
 });
 const openai = new OpenAIApi(configuration);
 
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', async (req: Request, res: Response) => {
   try {
     const messages = req.body.messages;
+
     const completion = await openai.createChatCompletion({
       model: 'gpt-4',
-      messages,
+      messages: messages,
     });
 
-    res.json({
-      messages: [...messages, completion.data.choices[0].message],
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'OpenAI request failed.' });
+    const reply = completion.data.choices[0].message?.content || '';
+    res.json({ result: reply });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
 
 app.listen(port, () => {
-  console.log(`✅ Server listening at http://localhost:${port}`);
+  console.log(`Server is running on port ${port}`);
 });

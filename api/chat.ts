@@ -1,16 +1,27 @@
-import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+import { Configuration, OpenAIApi } from "openai";
+import type { NextApiRequest, NextApiResponse } from "next";
 
-export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4",
-    messages: body.messages,
-  });
+const configuration = new Configuration({
+  apiKey: process.env.VITE_OPENAI_API_KEY,
+});
+const openai = new OpenAIApi(configuration);
 
-  return NextResponse.json({
-    messages: [...body.messages, completion.choices[0].message],
-  });
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { message } = req.body;
+
+  if (!message) {
+    return res.status(400).json({ error: "No message provided" });
+  }
+
+  try {
+    const completion = await openai.createChatCompletion({
+      model: "gpt-4",
+      messages: [{ role: "user", content: message }],
+    });
+
+    res.status(200).json({ reply: completion.data.choices[0].message.content });
+  } catch (error) {
+    res.status(500).json({ error: error.message || "An error occurred" });
+  }
 }

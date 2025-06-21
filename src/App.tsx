@@ -1,37 +1,56 @@
+
 import { useState } from "react";
+import "./App.css";
 
 function App() {
-  const [messages, setMessages] = useState([]);
-  const [message, setMessage] = useState("");
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<{ type: "user" | "bot"; text: string }[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleSend = async () => {
-    const response = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
-    });
-    const data = await response.json();
-    setMessages([...messages, { role: "user", content: message }, { role: "assistant", content: data.reply }]);
-    setMessage("");
+  const sendMessage = async () => {
+    if (!input.trim()) return;
+    const userMessage = input.trim();
+    setMessages([...messages, { type: "user", text: userMessage }]);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMessage }),
+      });
+      const data = await response.json();
+      setMessages((prev) => [...prev, { type: "bot", text: data.reply }]);
+    } catch (error) {
+      setMessages((prev) => [...prev, { type: "bot", text: "Error: Unable to fetch response." }]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial" }}>
+    <div className="App">
       <h1>SpiñO AI</h1>
-      <div style={{ marginBottom: "10px" }}>
-        {messages.map((msg, idx) => (
-          <div key={idx}><strong>{msg.role}:</strong> {msg.content}</div>
+      <div className="chat-box">
+        {messages.map((msg, index) => (
+          <div key={index} className={msg.type}>
+            {msg.text}
+          </div>
         ))}
       </div>
-      <input
-        type="text"
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleSend()}
-        placeholder="Type your message..."
-        style={{ width: "300px", marginRight: "10px" }}
-      />
-      <button onClick={handleSend}>Send</button>
+      <div className="input-box">
+        <input
+          type="text"
+          placeholder="Type your message..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+        />
+        <button onClick={sendMessage} disabled={loading}>
+          {loading ? "..." : "Send"}
+        </button>
+      </div>
     </div>
   );
 }

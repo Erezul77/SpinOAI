@@ -1,55 +1,45 @@
-
-import { useState } from "react";
-import "./App.css";
+import React, { useState } from 'react';
 
 function App() {
-  const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<{ type: "user" | "bot"; text: string }[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<{ role: string, content: string }[]>([]);
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
-    const userMessage = input.trim();
-    setMessages([...messages, { type: "user", text: userMessage }]);
-    setInput("");
-    setLoading(true);
+    const newMessages = [...messages, { role: 'user', content: input }];
+    setMessages(newMessages);
+    setInput('');
 
     try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage }),
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: newMessages }),
       });
-      const data = await response.json();
-      setMessages((prev) => [...prev, { type: "bot", text: data.reply }]);
-    } catch (error) {
-      setMessages((prev) => [...prev, { type: "bot", text: "Error: Unable to fetch response." }]);
-    } finally {
-      setLoading(false);
+
+      const data = await res.json();
+      setMessages([...newMessages, { role: 'assistant', content: data.response }]);
+    } catch (err) {
+      setMessages([...newMessages, { role: 'assistant', content: 'Error: Unable to fetch response.' }]);
     }
   };
 
   return (
-    <div className="App">
+    <div style={{ padding: 20, fontFamily: 'Arial' }}>
       <h1>SpiñO AI</h1>
-      <div className="chat-box">
-        {messages.map((msg, index) => (
-          <div key={index} className={msg.type}>
-            {msg.text}
-          </div>
+      <div style={{ height: 400, border: '1px solid gray', borderRadius: 10, padding: 10, overflowY: 'scroll' }}>
+        {messages.map((m, i) => (
+          <div key={i}><strong>{m.role}:</strong> {m.content}</div>
         ))}
       </div>
-      <div className="input-box">
+      <div style={{ display: 'flex', marginTop: 10 }}>
         <input
-          type="text"
-          placeholder="Type your message..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+          placeholder="Type your message..."
+          style={{ flex: 1, padding: 10 }}
         />
-        <button onClick={sendMessage} disabled={loading}>
-          {loading ? "..." : "Send"}
-        </button>
+        <button onClick={sendMessage} style={{ marginLeft: 10, padding: 10 }}>Send</button>
       </div>
     </div>
   );

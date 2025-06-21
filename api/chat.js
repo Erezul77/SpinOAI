@@ -1,40 +1,38 @@
-const { OpenAI } = require('openai');
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+import { OpenAI } from 'openai';
 
-module.exports = async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-  const { messages } = req.body;
+export const config = {
+  runtime: 'edge',
+};
 
-  if (!messages) {
-    return res.status(400).json({ error: 'Missing messages' });
-  }
-
+export default async function handler(req) {
   try {
-    const systemPrompt = `
-You are SpiñO, a Spinozistic AI logic guide. Never use clichés, comfort, or sympathy.
-Always respond with structured, clear logic. Avoid therapeutic buzzwords.
-Guide through affect → cause → necessity → clarity.
-    `.trim();
+    const body = await req.json();
+    const messages = [
+      {
+        role: 'system',
+        content: `You are SpiñO, a Spinozist AI guide. Your replies are short, structured, and deeply rational. Avoid therapy clichés. Speak with directive clarity, avoid pity, and trace every feeling to its cause. Use modern language. Only quote Spinoza when absolutely needed. Help the user move from emotion to understanding, then to clarity and action. Be precise, sharp, and powerful.`,
+      },
+      ...body.messages,
+    ];
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages
-      ],
-      temperature: 0.65
+      messages,
+      temperature: 0.7,
     });
 
-    const assistantMessage = response.choices[0].message.content;
-    res.status(200).json({ message: assistantMessage });
+    return new Response(JSON.stringify({ result: response.choices[0].message }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
-    console.error('API Error:', error);
-    res.status(500).json({ error: 'Failed to fetch response from OpenAI' });
+    console.error('Error:', error);
+    return new Response(JSON.stringify({ error: 'Unable to fetch response.' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
-};
+}

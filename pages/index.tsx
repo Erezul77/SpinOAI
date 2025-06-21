@@ -1,18 +1,20 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 type Message = {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
 };
 
 export default function Home() {
+  const [messages, setMessages] = useState<Message[]>([
+    { role: "assistant", content: "Welcome to your 1:1 session with SpiñO. What's troubling you?" }
+  ]);
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleSend = async () => {
-    const newMessages = [...messages, { role: 'user', content: input }];
+    const newMessages: Message[] = [...messages, { role: "user", content: input }];
     setMessages(newMessages);
     setInput('');
     setLoading(true);
@@ -21,51 +23,49 @@ export default function Home() {
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: newMessages }),
       });
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
       const data = await response.json();
 
-      setMessages([...newMessages, { role: 'assistant', content: data.reply }]);
-    } catch (err: any) {
-      console.error(err);
-      setError('Failed to fetch response.');
-    } finally {
-      setLoading(false);
+      if (response.ok) {
+        setMessages([...newMessages, { role: "assistant", content: data.result }]);
+      } else {
+        setError(data.error || 'Something went wrong.');
+      }
+    } catch (err) {
+      setError('Network error.');
     }
+
+    setLoading(false);
   };
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
+    <main style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto' }}>
       <h1>SpiñO AI</h1>
 
-      <div style={{ marginBottom: '1rem' }}>
-        {messages.map((msg, idx) => (
-          <div key={idx} style={{ marginBottom: '0.5rem' }}>
+      <div>
+        {messages.map((msg, index) => (
+          <div key={index} style={{ marginBottom: '1rem' }}>
             <strong>{msg.role === 'user' ? 'You' : 'SpiñO'}:</strong> {msg.content}
           </div>
         ))}
       </div>
 
       <textarea
-        rows={3}
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        style={{ width: '100%', marginBottom: '1rem' }}
+        rows={3}
+        style={{ width: '100%', marginTop: '1rem' }}
+        disabled={loading}
       />
-
-      <button onClick={handleSend} disabled={loading || !input.trim()}>
-        {loading ? 'Thinking…' : 'Send'}
+      <button onClick={handleSend} disabled={loading || !input.trim()} style={{ marginTop: '1rem' }}>
+        Send
       </button>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
-    </div>
+    </main>
   );
 }
+

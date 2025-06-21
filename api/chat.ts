@@ -1,26 +1,36 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { OpenAI } from 'openai';
+const { OpenAI } = require("openai");
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+module.exports = async function handler(req, res) {
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const { messages } = req.body;
+
+  if (!process.env.OPENAI_API_KEY) {
+    res.status(500).json({ error: "Missing OPENAI_API_KEY" });
+    return;
+  }
+
+  if (!messages) {
+    res.status(400).json({ error: "Missing messages in request body" });
+    return;
+  }
+
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+
   try {
-    const { messages } = req.body;
-
-    if (!messages) {
-      return res.status(400).json({ error: 'No messages provided' });
-    }
-
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4',
+    const chatCompletion = await openai.chat.completions.create({
       messages,
+      model: "gpt-4",
     });
 
-    return res.status(200).json({ response: completion.choices[0].message.content });
-  } catch (error) {
-    console.error('OpenAI error:', error);
-    return res.status(500).json({ error: error.message || 'Unknown error' });
+    res.status(200).json({ response: chatCompletion.choices[0].message.content });
+  } catch (err) {
+    console.error("OpenAI error:", err);
+    res.status(500).json({ error: "Failed to fetch response from OpenAI" });
   }
-}
+};

@@ -1,38 +1,29 @@
+import { OpenAI } from "openai";
 
-import { OpenAI } from 'openai';
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-export const config = {
-  runtime: 'edge',
-};
-
-export default async function handler(req) {
   try {
-    const body = await req.json();
-    const messages = [
-      {
-        role: 'system',
-        content: `You are SpiñO, a Spinozist AI guide. Your replies are short, structured, and deeply rational. Avoid therapy clichés. Speak with directive clarity, avoid pity, and trace every feeling to its cause. Use modern language. Only quote Spinoza when absolutely needed. Help the user move from emotion to understanding, then to clarity and action. Be precise, sharp, and powerful.`,
-      },
-      ...body.messages,
-    ];
+    const { messages } = req.body;
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4',
+    if (!messages || !Array.isArray(messages)) {
+      return res.status(400).json({ error: "Invalid messages format" });
+    }
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4",
       messages,
-      temperature: 0.7,
     });
 
-    return new Response(JSON.stringify({ result: response.choices[0].message }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  } catch (error) {
-    console.error('Error:', error);
-    return new Response(JSON.stringify({ error: 'Unable to fetch response.' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    res.status(200).json({ response: completion.choices[0].message.content });
+  } catch (err) {
+    console.error("OpenAI API Error:", err);
+    res.status(500).json({ error: "Failed to generate response" });
   }
 }

@@ -17,13 +17,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Invalid request: messages must be an array' });
     }
 
+    // Validate all message objects
+    const sanitizedMessages = messages
+      .filter(
+        (msg) =>
+          typeof msg === 'object' &&
+          typeof msg.role === 'string' &&
+          typeof msg.content === 'string' &&
+          msg.content.trim() !== ''
+      )
+      .map((msg) => ({
+        role: msg.role,
+        content: msg.content.trim(),
+      }));
+
+    if (sanitizedMessages.length === 0) {
+      return res.status(400).json({ error: 'All messages are empty or invalid.' });
+    }
+
     const completion = await openai.chat.completions.create({
       model: 'gpt-4',
-      messages,
+      messages: sanitizedMessages,
     });
 
-    const responseMessage =
-      completion.choices?.[0]?.message?.content?.trim() || '…';
+    const responseMessage = completion.choices?.[0]?.message?.content?.trim() || '…';
 
     res.status(200).json({ response: responseMessage });
   } catch (error: any) {

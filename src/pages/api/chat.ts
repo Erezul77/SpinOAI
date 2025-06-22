@@ -1,35 +1,31 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { Configuration, OpenAIApi } from 'openai';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import OpenAI from 'openai';
 
-const configuration = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
 });
-
-const openai = new OpenAIApi(configuration);
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { messages } = req.body;
-
-  if (!messages || !Array.isArray(messages)) {
-    return res.status(400).json({ error: 'Invalid request body: messages must be an array' });
+  const { message } = req.body;
+  if (!message) {
+    return res.status(400).json({ error: 'No message provided' });
   }
 
   try {
-    const completion = await openai.createChatCompletion({
+    const completion = await openai.chat.completions.create({
+      messages: [{ role: 'user', content: message }],
       model: 'gpt-4',
-      messages: messages.map((msg: any) => ({
-        role: msg.role,
-        content: typeof msg.content === 'string' ? msg.content : '',
-      })),
     });
 
-    const reply = completion.data.choices[0].message?.content || '';
+    const reply = completion.choices[0]?.message?.content || 'No reply';
     res.status(200).json({ reply });
   } catch (error: any) {
-    res.status(500).json({ error: error.message || 'Something went wrong' });
+    console.error('OpenAI API error:', error);
+    res.status(500).json({ error: 'OpenAI API error' });
   }
 }
+

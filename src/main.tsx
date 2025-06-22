@@ -12,10 +12,8 @@ export default function Main() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
-
-    const newMessages = [...messages, { sender: 'user', content: input }];
+  const sendMessage = async () => {
+    const newMessages: Message[] = [...messages, { sender: 'user', content: input }];
     setMessages(newMessages);
     setInput('');
     setLoading(true);
@@ -26,62 +24,47 @@ export default function Main() {
         messages: newMessages,
       });
 
-      const reply = response.data.reply?.trim();
-      if (reply) {
-        setMessages([...newMessages, { sender: 'spino', content: reply }]);
-      } else {
-        setError("Invalid reply from SpiñO.");
-      }
+      const reply = response.data.reply;
+      setMessages([...newMessages, { sender: 'spino', content: reply }]);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to fetch response from SpiñO.');
+      console.error(err);
+      setError('Failed to get response from SpiñO.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen p-8 bg-white text-black font-serif">
-      {/* Head metadata – if using _app.tsx or index.html */}
-      <head>
-        <link rel="icon" type="image/x-icon" href="/src/assets/favicon.ico" />
-        <title>SpiñO AI</title>
-      </head>
+    <div className="max-w-2xl mx-auto p-4">
+      <h1 className="text-xl font-semibold mb-4">Welcome to a 1:1 session with SpiñO – the Spinozistic AI coach.</h1>
 
-      {/* Header */}
-      <h1 className="text-4xl font-bold mb-4">SpiñO AI</h1>
-      <p className="mb-6">
-        <strong>SpiñO:</strong> Welcome to your 1:1 session with SpiñO. What's troubling you?
-      </p>
-
-      {/* Chat history */}
-      <div className="mb-4 space-y-2">
+      <div className="space-y-2 mb-4">
         {messages.map((msg, idx) => (
-          <p key={idx}>
+          <div key={idx} className={`p-2 rounded ${msg.sender === 'user' ? 'bg-gray-200' : 'bg-blue-100'}`}>
             <strong>{msg.sender === 'user' ? 'You' : 'SpiñO'}:</strong> {msg.content}
-          </p>
+          </div>
         ))}
-        {loading && <p><strong>SpiñO:</strong> ...</p>}
       </div>
 
-      {/* Input */}
-      <div className="flex flex-col gap-2">
-        <textarea
-          className="border p-2 w-full h-20"
+      <div className="flex space-x-2">
+        <input
+          className="flex-1 border border-gray-300 rounded p-2"
+          type="text"
+          placeholder="Enter your reflection..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Write your reflection..."
+          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
         />
         <button
-          onClick={handleSend}
-          disabled={loading || !input.trim()}
-          className="bg-black text-white px-4 py-2 rounded disabled:opacity-50"
+          onClick={sendMessage}
+          disabled={loading || input.trim() === ''}
+          className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
         >
-          {loading ? 'Thinking...' : 'Send'}
+          {loading ? 'Sending...' : 'Send'}
         </button>
       </div>
 
-      {/* Error message */}
-      {error && <p className="mt-4 text-red-600">{error}</p>}
+      {error && <p className="text-red-600 mt-2">{error}</p>}
     </div>
   );
 }

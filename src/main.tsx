@@ -1,74 +1,78 @@
-// src/main.tsx
 import React, { useState } from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
+import Head from 'next/head';
 
-interface Message {
+type Message = {
   sender: 'user' | 'spino';
   text: string;
-}
+};
 
-const App: React.FC = () => {
+export default function Home() {
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    { sender: 'spino', text: "Welcome to your 1:1 session with SpiñO. What's troubling you?" }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const sendMessage = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     const trimmed = input.trim();
     if (!trimmed) return;
 
-    const newMessages = [...messages, { sender: 'user', text: trimmed }];
+    const newMessages: Message[] = [...messages, { sender: 'user' as const, text: trimmed }];
     setMessages(newMessages);
     setInput('');
     setError('');
+    setLoading(true);
 
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: newMessages.map(m => ({
-            role: m.sender === 'user' ? 'user' : 'assistant',
-            content: m.text
-          }))
-        }),
+        body: JSON.stringify({ message: trimmed }),
       });
 
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Unknown error');
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Something went wrong.');
-      }
-
-      setMessages(prev => [...prev, { sender: 'spino', text: data.reply }]);
+      setMessages((prev) => [...prev, { sender: 'spino' as const, text: data.reply }]);
     } catch (err: any) {
-      setError(err.message || 'Failed to get a reply.');
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <main style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-      <h1>SpiñO AI</h1>
-      <div>
-        {messages.map((msg, idx) => (
-          <p key={idx}><strong>{msg.sender === 'user' ? 'You' : 'SpiñO'}:</strong> {msg.text}</p>
-        ))}
-      </div>
-      <textarea
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        rows={3}
-        style={{ width: '100%', marginTop: '1rem' }}
-      />
-      <button onClick={sendMessage} disabled={!input.trim()} style={{ marginTop: '0.5rem' }}>
-        Send
-      </button>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-    </main>
+    <>
+      <Head>
+        <title>SpiñO – The Spinozist Coach</title>
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <main className="min-h-screen bg-white text-black p-4">
+        <h1 className="text-xl font-semibold mb-4">Welcome to a 1:1 session with SpiñO – the Spinozistic AI coach.</h1>
+        <div className="space-y-2 mb-4 max-h-[60vh] overflow-y-auto border rounded p-2">
+          {messages.map((msg, idx) => (
+            <div key={idx} className={msg.sender === 'user' ? 'text-right' : 'text-left'}>
+              <span className="inline-block rounded px-3 py-1 bg-gray-100">{msg.text}</span>
+            </div>
+          ))}
+        </div>
+        <form onSubmit={handleSubmit} className="flex gap-2">
+          <input
+            className="flex-grow border px-3 py-1 rounded"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Your message..."
+          />
+          <button
+            type="submit"
+            className="bg-black text-white px-4 py-1 rounded disabled:opacity-50"
+            disabled={loading}
+          >
+            {loading ? '...' : 'Send'}
+          </button>
+        </form>
+        {error && <p className="text-red-600 mt-2">{error}</p>}
+      </main>
+    </>
   );
-};
-
-const root = ReactDOM.createRoot(document.getElementById('root')!);
-root.render(<App />);
+}

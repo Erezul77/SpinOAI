@@ -11,8 +11,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const { message } = req.body;
-  if (!message) {
-    return res.status(400).json({ error: 'No message provided' });
+
+  // 💥 Null + type check
+  if (typeof message !== 'string' || message.trim() === '') {
+    return res.status(400).json({ error: "Invalid input: 'message' must be a non-empty string" });
   }
 
   try {
@@ -21,11 +23,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       model: 'gpt-4',
     });
 
-    const reply = completion.choices[0]?.message?.content || 'No reply';
+    const reply = completion.choices[0]?.message?.content || 'No reply received.';
     res.status(200).json({ reply });
   } catch (error: any) {
-    console.error('OpenAI API error:', error);
-    res.status(500).json({ error: 'OpenAI API error' });
+    console.error('OpenAI error:', error);
+    res.status(500).json({ error: 'OpenAI API call failed' });
   }
 }
-

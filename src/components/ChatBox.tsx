@@ -19,7 +19,7 @@ export default function ChatBox() {
   const handleSubmit = async () => {
     if (!input.trim()) return;
 
-    const updatedMessages = [...messages, { role: "user", content: input }];
+    const updatedMessages = [...messages, { role: "user" as const, content: input }];
     setMessages(updatedMessages);
     setInput("");
     setError(null);
@@ -35,7 +35,7 @@ export default function ChatBox() {
       const data = await res.json();
 
       if (res.ok && typeof data.result === "string") {
-        const assistantMessage = { role: "assistant", content: data.result };
+        const assistantMessage = { role: "assistant" as const, content: data.result };
         setMessages([...updatedMessages, assistantMessage]);
       } else {
         setError("SpiñO could not generate a reply.");

@@ -9,7 +9,7 @@ interface Message {
 
 const Main: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: "Welcome to your 1:1 session with SpiñO. How do you feel today?" }
+    { role: 'assistant', content: "Welcome to your 1:1 session with SpiñO. What's troubling you?" }
   ]);
   const [input, setInput] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +18,7 @@ const Main: React.FC = () => {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const userMessage: Message = { role: 'user', content: input };
+    const userMessage: Message = { role: 'user' as const, content: input };
     const newMessages = [...messages, userMessage];
 
     setMessages(newMessages);
@@ -32,7 +32,7 @@ const Main: React.FC = () => {
       });
 
       const reply = res.data.reply?.content || 'SpiñO could not generate a reply.';
-      setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
+      setMessages(prev => [...prev, { role: 'assistant' as const, content: reply }]);
     } catch (err) {
       console.error('Error sending message:', err);
       setError('SpiñO could not generate a reply.');
@@ -49,11 +49,12 @@ const Main: React.FC = () => {
   };
 
   return (
-    <main className="min-h-screen bg-gray-100 py-8 px-4 font-serif">
-      <div className="max-w-2xl mx-auto bg-white p-6 rounded-2xl shadow-md">
-        <h1 className="text-3xl font-bold mb-1 text-center">SpiñO AI</h1>
-        <p className="text-center text-gray-600 mb-6">Welcome to your 1:1 Spinozistic session</p>
+    <main className="min-h-screen bg-gray-100 font-serif">
+      <header className="bg-white shadow p-4 text-center text-2xl font-bold tracking-wide text-indigo-700">
+        SpiñO – Your Reflection Companion
+      </header>
 
+      <div className="max-w-2xl mx-auto bg-white mt-6 p-6 rounded-2xl shadow-md">
         <div className="space-y-4 mb-6 max-h-[60vh] overflow-y-auto pr-2">
           {messages.map((msg, i) => (
             <div

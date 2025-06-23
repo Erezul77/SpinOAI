@@ -9,7 +9,7 @@ interface Message {
 
 const Main: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: "Welcome to your 1:1 session with SpiñO. What's troubling you?" }
+    { role: 'assistant', content: "Welcome Dear, How do you feel today?" }
   ]);
   const [input, setInput] = useState('');
   const [error, setError] = useState<string | null>(null);

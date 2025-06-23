@@ -7,7 +7,6 @@ export default function Document() {
       <Head>
         <link rel="icon" href="/favicon.ico" />
         <meta name="description" content="Welcome to your 1:1 session with SpiñO – the Spinozistic AI coach." />
-        <title>SpiñO AI</title>
       </Head>
       <body>
         <Main />

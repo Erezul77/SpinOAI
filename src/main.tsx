@@ -1,78 +1,99 @@
+
 import React, { useState } from 'react';
-import Head from 'next/head';
+import axios from 'axios';
 
-type Message = {
-  sender: 'user' | 'spino';
-  text: string;
-};
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
-export default function Home() {
+const Main: React.FC = () => {
+  const [messages, setMessages] = useState<Message[]>([
+    { role: 'assistant', content: "Welcome to your 1:1 session with SpiñO. How do you feel today?" }
+  ]);
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = input.trim();
-    if (!trimmed) return;
+  const sendMessage = async () => {
+    if (!input.trim()) return;
 
-    const newMessages: Message[] = [...messages, { sender: 'user' as const, text: trimmed }];
+    const userMessage: Message = { role: 'user', content: input };
+    const newMessages = [...messages, userMessage];
+
     setMessages(newMessages);
     setInput('');
-    setError('');
+    setError(null);
     setLoading(true);
 
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmed }),
+      const res = await axios.post('/api/chat', {
+        messages: newMessages
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Unknown error');
-
-      setMessages((prev) => [...prev, { sender: 'spino' as const, text: data.reply }]);
-    } catch (err: any) {
-      setError(err.message);
+      const reply = res.data.reply?.content || 'SpiñO could not generate a reply.';
+      setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
+    } catch (err) {
+      console.error('Error sending message:', err);
+      setError('SpiñO could not generate a reply.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
   return (
-    <>
-      <Head>
-        <title>SpiñO – The Spinozist Coach</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <main className="min-h-screen bg-white text-black p-4">
-        <h1 className="text-xl font-semibold mb-4">Welcome to a 1:1 session with SpiñO – the Spinozistic AI coach.</h1>
-        <div className="space-y-2 mb-4 max-h-[60vh] overflow-y-auto border rounded p-2">
-          {messages.map((msg, idx) => (
-            <div key={idx} className={msg.sender === 'user' ? 'text-right' : 'text-left'}>
-              <span className="inline-block rounded px-3 py-1 bg-gray-100">{msg.text}</span>
+    <main className="min-h-screen bg-gray-100 py-8 px-4 font-serif">
+      <div className="max-w-2xl mx-auto bg-white p-6 rounded-2xl shadow-md">
+        <h1 className="text-3xl font-bold mb-1 text-center">SpiñO AI</h1>
+        <p className="text-center text-gray-600 mb-6">Welcome to your 1:1 Spinozistic session</p>
+
+        <div className="space-y-4 mb-6 max-h-[60vh] overflow-y-auto pr-2">
+          {messages.map((msg, i) => (
+            <div
+              key={i}
+              className={`p-3 rounded-xl whitespace-pre-wrap ${
+                msg.role === 'user'
+                  ? 'bg-blue-100 text-right ml-12'
+                  : 'bg-gray-200 text-left mr-12'
+              }`}
+            >
+              <div className="text-sm text-gray-700">
+                <strong>{msg.role === 'user' ? 'You' : 'SpiñO'}:</strong> {msg.content}
+              </div>
             </div>
           ))}
         </div>
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <input
-            className="flex-grow border px-3 py-1 rounded"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Your message..."
-          />
+
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          rows={3}
+          className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring focus:ring-indigo-200 resize-none"
+          placeholder="Type your reflection and press Enter to send..."
+        />
+
+        {error && <p className="text-red-500 mt-2">{error}</p>}
+
+        <div className="text-right mt-2">
           <button
-            type="submit"
-            className="bg-black text-white px-4 py-1 rounded disabled:opacity-50"
+            onClick={sendMessage}
             disabled={loading}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 transition disabled:opacity-50"
           >
-            {loading ? '...' : 'Send'}
+            {loading ? 'Thinking...' : 'Send'}
           </button>
-        </form>
-        {error && <p className="text-red-600 mt-2">{error}</p>}
-      </main>
-    </>
+        </div>
+      </div>
+    </main>
   );
-}
+};
+
+export default Main;

@@ -1,31 +1,35 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import OpenAI from 'openai';
+// /pages/api/chat.ts
+import type { NextApiRequest, NextApiResponse } from "next";
+import { OpenAI } from "openai";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const { messages } = req.body;
-
-  if (!messages || !Array.isArray(messages)) {
-    return res.status(400).json({ error: 'Invalid messages format' });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    const chatResponse = await openai.chat.completions.create({
-      model: 'gpt-4',
+    const { messages } = req.body;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4",
       messages,
     });
 
-    const reply = chatResponse.choices[0]?.message;
-    res.status(200).json({ message: reply });
-  } catch (err: any) {
-    console.error('OpenAI error:', err);
-    res.status(500).json({ error: err.message || 'Failed to generate response' });
+    const reply = completion.choices[0]?.message?.content;
+
+    console.log("OPENAI REPLY:", reply);
+
+    if (!reply) {
+      return res.status(500).json({ error: "No reply from assistant." });
+    }
+
+    return res.status(200).json({ result: reply });
+  } catch (error: any) {
+    console.error("API ERROR:", error.message);
+    return res.status(500).json({ error: error.message || "Unknown error." });
   }
 }

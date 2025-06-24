@@ -18,10 +18,11 @@ const Main: React.FC = () => {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const userMessage: Message = { role: 'user' as const, content: input };
-    const newMessages = [...messages, userMessage];
+    const userMessage: Message = { role: 'user', content: input };
+    const filteredMessages = messages.filter(msg => msg.role === 'user');
+    const newMessages = [...filteredMessages, userMessage];
 
-    setMessages(newMessages);
+    setMessages([...messages, userMessage]);
     setInput('');
     setError(null);
     setLoading(true);
@@ -32,7 +33,7 @@ const Main: React.FC = () => {
       });
 
       const reply = res.data.reply?.content || 'SpiñO could not generate a reply.';
-      setMessages(prev => [...prev, { role: 'assistant' as const, content: reply }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
     } catch (err) {
       console.error('Error sending message:', err);
       setError('SpiñO could not generate a reply.');
